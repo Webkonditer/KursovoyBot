@@ -66,7 +66,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         this.config = config;
 
-        //Задание пунктов основного меню
+        //Создание пунктов основного меню
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "регистрирует пользователя"));
         listOfCommands.add(new BotCommand("/help", "выводит справку по боту"));
