@@ -160,27 +160,21 @@ public class TelegramBot extends TelegramLongPollingBot {
             String callBackData = update.getCallbackQuery().getData();
             long messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-
             if (callBackData.equals(YES_BUTTON)) {
-
                 newMessageFlag = true;
                 String text = "Отлично! Создайте Ваше новое напоминание, как на образце ниже:\n\n " +
                         "01.01.2022 20:00 Сделать домашнюю работу";
                 executeEditMessageText(text, chatId, messageId);
-
             } else if (callBackData.equals(NO_BUTTON) || callBackData.equals("cancel")) {
-
                 String text = "Хорошо! Выберите другое действие из меню.";
                 executeEditMessageText(text, chatId, messageId);
-
             } else if (callBackData.contains("delete")) {
-
                 notificationTaskRepository.deleteById(Long.parseLong(callBackData.substring(7)));
                 String text = "Выбранное напоминание удалено.";
                 executeEditMessageText(text, chatId, messageId);
                 log.info("the reminder was removed at the request of the user");
-
             }
+
         }
     }
 
