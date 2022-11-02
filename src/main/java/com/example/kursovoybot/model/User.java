@@ -7,6 +7,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity(name = "usersDataTable")
@@ -20,7 +21,7 @@ public class User {
 
     private String userName;
 
-    private Timestamp registeredAt;
+    private LocalDateTime registeredAt;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
@@ -66,11 +67,11 @@ public class User {
         this.userName = userName;
     }
 
-    public Timestamp getRegisteredAt() {
+    public LocalDateTime getRegisteredAt() {
         return registeredAt;
     }
 
-    public void setRegisteredAt(Timestamp registeredAt) {
+    public void setRegisteredAt(LocalDateTime registeredAt) {
         this.registeredAt = registeredAt;
     }
 

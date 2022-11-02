@@ -13,11 +13,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class BotConfig {
 
     @Value("${bot.name}")
-    String botName;
+    private String botName;
 
     @Value("${bot.token}")
-    String token;
+    private String token;
 
     @Value("${bot.owner}")
-    Long ownerId;
+    private Long ownerId;
 }
