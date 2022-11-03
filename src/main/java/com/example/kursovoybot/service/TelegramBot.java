@@ -7,8 +7,7 @@ import com.example.kursovoybot.repository.NotificationTaskRepository;
 import com.example.kursovoybot.repository.UserRepository;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -23,56 +22,71 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private NotificationTaskRepository notificationTaskRepository;
+    private final NotificationTaskRepository notificationTaskRepository;
+
+    private final NewReminderCreate newReminderCreate;
 
     //Информация, выводимая при выборе в меню раздела help
-    private static final String HELP_TEXT = "Этот бот предназначен для создания напоминалок. " +
-            "Любой пользователь бота может установить в нем напоминания для себя. И бот в назначенное время " +
-            "покажет именно этому пользователю его напоминание.\n\n" +
-            "В меню доступны следующие команды:\n\n" +
-            "Команда /start выводит приветственное сообщение и регистрирует пользователя в базе.\n\n" +
-            "Команда /help выводит раздел помощи.\n\n" +
-            "Команда /create_a_reminder создает новое напоминание.\n\n" +
-            "Команда /show_my_reminders выводит все Ваши напоминания.\n\n" +
-            "Команда /delete удаляет напоминание.";
+    private static final String HELP_TEXT = """
+            Этот бот предназначен для создания напоминалок. Любой пользователь бота может установить в нем напоминания для себя. И бот в назначенное время покажет именно этому пользователю его напоминание.
 
-    static final String YES_BUTTON = "YES_BUTTON";
-    static final String NO_BUTTON = "NO_BUTTON";
+            В меню доступны следующие команды:
 
-    final BotConfig config;
+            Команда /start выводит приветственное сообщение и регистрирует пользователя в базе.
+
+            Команда /help выводит раздел помощи.
+
+            Команда /create_a_reminder создает новое напоминание.
+
+            Команда /show_my_reminders выводит все Ваши напоминания.
+
+            Команда /delete удаляет напоминание.""";
+
+    private static final String YES_BUTTON = "YES_BUTTON";
+    private static final String NO_BUTTON = "NO_BUTTON";
+    private static final String CANCEL_BUTTON = "cancel";
+    private static final String START_COMAND = "/start";
+    private static final String HELP_COMAND = "/help";
+    private static final String CREATE_COMAND = "/create_a_reminder";
+    private static final String SHOW_COMAND = "/show_my_reminders";
+    private static final String DELETE_COMAND = "/delete";
+
+    private final String FORMATTER = "dd.MM.yyyy HH:mm";
+
+
+    private final BotConfig config;
 
     //Флаг добавления нового сообщения
-    private boolean newMessageFlag = false;
+    private final Map<Long,Boolean> newMessageFlag = new HashMap<>();
 
-    public TelegramBot(BotConfig config) {
+    public TelegramBot(BotConfig config,
+                       UserRepository userRepository,
+                       NotificationTaskRepository notificationTaskRepository,
+                       @Lazy NewReminderCreate newReminderCreate)
+    {
 
         this.config = config;
+        this.userRepository = userRepository;
+        this.notificationTaskRepository = notificationTaskRepository;
+        this.newReminderCreate = newReminderCreate;
 
         //Создание пунктов основного меню
         List<BotCommand> listOfCommands = new ArrayList<>();
-        listOfCommands.add(new BotCommand("/start", "регистрирует пользователя"));
-        listOfCommands.add(new BotCommand("/help", "выводит справку по боту"));
-        listOfCommands.add(new BotCommand("/create_a_reminder", "создает новое напоминание"));
-        listOfCommands.add(new BotCommand("/show_my_reminders", "список Ваших напоминаний"));
-        listOfCommands.add(new BotCommand("/delete", "удаляет напоминание"));
+        listOfCommands.add(new BotCommand(START_COMAND, "регистрирует пользователя"));
+        listOfCommands.add(new BotCommand(HELP_COMAND, "выводит справку по боту"));
+        listOfCommands.add(new BotCommand(CREATE_COMAND, "создает новое напоминание"));
+        listOfCommands.add(new BotCommand(SHOW_COMAND, "список Ваших напоминаний"));
+        listOfCommands.add(new BotCommand(DELETE_COMAND, "удаляет напоминание"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -90,41 +104,29 @@ public class TelegramBot extends TelegramLongPollingBot {
         return config.getToken();
     }
 
+    public String getFORMATTER() {return FORMATTER;}
+
+    /**
+     *Обработка поступающих запросов.
+     *
+     * @param update  объект запроса
+     */
     @Override
     public void onUpdateReceived(Update update) {
+
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
             //Если вводится новое напоминание
-            if (newMessageFlag) {
-
-                newMessageFlag = false;
-                try {
-                    LocalDateTime.parse(messageText.substring(0, 16), DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
-                } catch (DateTimeParseException e){
-                    var textToSend = EmojiParser.parseToUnicode("Неправильный формат даты и времени " + ":confused:" + " Попробуйте еще раз!");
-                    sendMessage(chatId, textToSend);
-                    log.info("the user entered an incorrect date");
-                }
-                LocalDateTime dateTime = LocalDateTime.parse(messageText.substring(0, 16), DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
-                String reminderText = messageText.substring(17);
-                User user = userRepository.findById(chatId).orElseThrow();
-                if(dateTime.isBefore(LocalDateTime.now())){
-                    var textToSend = EmojiParser.parseToUnicode("Дата и время ранее текущего " + ":confused:" + " Попробуйте еще раз!");
-                    sendMessage(user.getChatId(), textToSend);
-                    log.info("the user entered a date earlier than the current one");
-                } else {
-                    registerNewReminder(user, reminderText, dateTime);
-                    var textToSend = EmojiParser.parseToUnicode("Ваше напоминание успешно сохранено " + ":ok_hand:");
-                    sendMessage(user.getChatId(), textToSend);
-                }
-
+            if (newMessageFlag.get(chatId) != null && newMessageFlag.get(chatId)) {
+                newMessageFlag.put(chatId, false);
+                newReminderCreate.createNewReminder(chatId, messageText);
             } else {
 
                 //Обрабатываем входящие команды
                 switch (messageText) {
-                    case "/start":
+                    case START_COMAND:
                         try {
                             registerUser(update.getMessage());
                             startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
@@ -133,19 +135,19 @@ public class TelegramBot extends TelegramLongPollingBot {
                         }
                         break;
 
-                    case "/help":
+                    case HELP_COMAND:
                             sendMessage(chatId, HELP_TEXT);
                         break;
 
-                    case "/create_a_reminder":
+                    case CREATE_COMAND:
                         createNewReminder(chatId);
                         break;
 
-                    case "/show_my_reminders":
+                    case SHOW_COMAND:
                         showMyReminders(chatId);
                         break;
 
-                    case "/delete":
+                    case DELETE_COMAND:
                         delete(chatId);
                         break;
 
@@ -161,11 +163,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             long messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
             if (callBackData.equals(YES_BUTTON)) {
-                newMessageFlag = true;
+                newMessageFlag.put(chatId,true);
                 String text = "Отлично! Создайте Ваше новое напоминание, как на образце ниже:\n\n " +
-                        "01.01.2022 20:00 Сделать домашнюю работу";
+                        "01.01.2023 12:00 С Новым годом меня любимого!";
                 executeEditMessageText(text, chatId, messageId);
-            } else if (callBackData.equals(NO_BUTTON) || callBackData.equals("cancel")) {
+            } else if (callBackData.equals(NO_BUTTON) || callBackData.equals(CANCEL_BUTTON)) {
                 String text = "Хорошо! Выберите другое действие из меню.";
                 executeEditMessageText(text, chatId, messageId);
             } else if (callBackData.contains("delete")) {
@@ -178,24 +180,24 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    //Обработка запроса на удаление напоминания
+    /**
+     *Обработка запроса на удаление напоминания.
+     *
+     * @param chatId  id текущего чата
+     */
     private void delete(long chatId) {
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText("Выберите напоминание, которое необходимо удалить:");
-        User user = userRepository.findById(chatId).orElseThrow();
-        var reminders = user.getReminders();
-
-        //Сортировка по дате и времени напоминания
-        reminders.sort(Comparator.comparing(NotificationTask::getReminderTime));
+        List<NotificationTask> reminders = notificationTaskRepository.findAllByUserId(chatId);
 
         //Создание кнопок
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         for (NotificationTask reminder : reminders) {
             var button = new InlineKeyboardButton();
-            var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"));
+            var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern(FORMATTER));
             button.setText(dateTime + ": " + reminder.getReminderText());
             button.setCallbackData("delete_" + reminder.getId());
             List<InlineKeyboardButton> rowInline = new ArrayList<>();
@@ -204,7 +206,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         var button = new InlineKeyboardButton();
         button.setText("Отмена");
-        button.setCallbackData("cancel");
+        button.setCallbackData(CANCEL_BUTTON);
         List<InlineKeyboardButton> rowInline = new ArrayList<>();
         rowInline.add(button);
         rowsInline.add(rowInline);
@@ -214,23 +216,29 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
-    //Вывод всех напоминаний пользователя
+    /**
+     *Вывод всех напоминаний пользователя.
+     *
+     * @param chatId  id текущего чата
+     */
     private void showMyReminders(long chatId) {
 
-        var reminders = notificationTaskRepository.findAllOrderByReminderTime();
+        var reminders = notificationTaskRepository.findAllByUserId(chatId);
         StringBuilder listOfReminders = new StringBuilder();
         for (NotificationTask reminder: reminders){
-            if (reminder.getUser().getChatId() == chatId) {
-                var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"));
-                listOfReminders.append(dateTime).append(": ").append(reminder.getReminderText()).append("\n");
-            }
+            var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern(FORMATTER));
+            listOfReminders.append(dateTime).append(": ").append(reminder.getReminderText()).append("\n");
         }
         sendMessage(chatId, listOfReminders.toString());
         log.info("all reminders have been issued at the user's request");
 
     }
 
-    //Обработка запроса на создание нового напоминания
+    /**
+     *Обработка запроса на создание нового напоминания.
+     *
+     * @param chatId  id текущего чата
+     */
     private void createNewReminder(long chatId) {
 
         SendMessage message = new SendMessage();
@@ -256,7 +264,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
-    //Регистрация нового пользователя
+    /**
+     *Ррегистрирует нового пользователя в БД.
+     *
+     * @param msg  объект сообщения
+     */
     private void registerUser(Message msg) {
         if (userRepository.findById(msg.getChatId()).isEmpty()) {
 
@@ -267,26 +279,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             user.setFirstName(chat.getFirstName());
             user.setLastName(chat.getLastName());
             user.setUserName(chat.getUserName());
-            user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+            user.setRegisteredAt(LocalDateTime.now());
             userRepository.save(user);
             log.info("user saved: " + user);
 
         }
     }
 
-    //Сохранение в базу нового напоминания
-    private void registerNewReminder(User user, String reminderText, LocalDateTime dateTime) {
-
-        NotificationTask reminder = new NotificationTask();
-        reminder.setUser(user);
-        reminder.setReminderText(reminderText);
-        reminder.setReminderTime(dateTime);
-        notificationTaskRepository.save(reminder);
-        log.info("reminder saved: " + reminder);
-
-    }
-
-    //Ответ на команду start
+    /**
+     *Обработка команды /start.
+     *
+     * @param chatId  id текущего чата
+     * @param firstName  имя пользователя
+     */
     private void startCommandReceived(long chatId, String firstName) throws TelegramApiException {
 
         String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! Пожалуйста выберите желаемое действие из меню ниже.");
@@ -295,8 +300,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
-    //Отправка сообщения пользователю
-    private void sendMessage(long chatId, String textToSend){
+    /**
+     *Подготовка сообщения пользователю.
+     *
+     * @param chatId  id текущего чата
+     * @param textToSend  текст сообщения
+     */
+    void sendMessage(long chatId, String textToSend){
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -305,6 +315,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
+    /**
+     *Отправка приветственного сообщения пользователю и формирование нижнего меню.
+     *
+     * @param chatId  id текущего чата
+     * @param textToSend  текст сообщения
+     */
     private void sendStartMessage(long chatId, String textToSend) throws TelegramApiException{
 
         SendMessage message = new SendMessage();
@@ -315,12 +331,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboardRows = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
-        row.add("/help");//Добавление кнопки
-        row.add(" /create_a_reminder");
+        row.add(HELP_COMAND);//Добавление кнопки
+        row.add(CREATE_COMAND);
         keyboardRows.add(row);//Добавление строки кнопок
         row = new KeyboardRow();
-        row.add("/show_my_reminders");
-        row.add("/delete");
+        row.add(SHOW_COMAND);
+        row.add(DELETE_COMAND);
         keyboardRows.add(row);
         keyboardMarkup.setKeyboard(keyboardRows);//Формирование клавиатуры
         message.setReplyMarkup(keyboardMarkup);//Добавление клавиатуры
@@ -329,6 +345,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
+
+    /**
+     *Отправка измененного сообщения пользователю.
+     *
+     * @param text  текст сообщения
+     * @param chatId  id текущего чата
+     * @param messageId  id изменяемого сообщения
+     */
     private void executeEditMessageText(String text, long chatId, long messageId){
 
         EditMessageText message = new EditMessageText();
@@ -344,6 +368,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
+    /**
+     *Отправка сообщения пользователю.
+     *
+     * @param message  объект сообщения
+     */
     private void executeMessage(SendMessage message){
 
         try{
@@ -353,20 +382,4 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
     }
-
-    //Отправка напоминаний по расписанию
-    @Scheduled(cron = "${cron.scheduler}")
-    private void sendReminders() throws TelegramApiException {
-
-        var reminders = notificationTaskRepository.findAll();
-        for (NotificationTask reminder: reminders){
-            if(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).equals(reminder.getReminderTime().truncatedTo(ChronoUnit.MINUTES))){
-                sendMessage(reminder.getUser().getChatId(), reminder.getReminderText());
-                notificationTaskRepository.deleteById(reminder.getId());
-            }
-        }
-        log.info("scheduled messages sent");
-
-    }
-
 }
