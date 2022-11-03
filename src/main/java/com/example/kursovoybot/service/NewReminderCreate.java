@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class NewReminderCreate {
 
-    private final Pattern PATTERN = Pattern.compile("([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)");
+    private final static Pattern PATTERN = Pattern.compile("([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)");
 
     private final TelegramBot telegramBot;
 

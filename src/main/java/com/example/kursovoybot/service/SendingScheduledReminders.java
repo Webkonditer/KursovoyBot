@@ -24,7 +24,10 @@ public class SendingScheduledReminders {
         this.notificationTaskRepository = notificationTaskRepository;
     }
 
-    //Отправка напоминаний по расписанию
+    /**
+     * Отправляет напоминания по расписанию.
+     *
+     */
     @Scheduled(cron = "${cron.scheduler}")
     private void sendReminders() throws TelegramApiException {
 
