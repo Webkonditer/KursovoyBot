@@ -25,10 +25,13 @@ public class NewReminderCreate {
 
     private final NotificationTaskRepository notificationTaskRepository;
 
-    public NewReminderCreate(TelegramBot telegramBot, UserRepository userRepository, NotificationTaskRepository notificationTaskRepository) {
+    private final SendingMessages sendingMessages;
+
+    public NewReminderCreate(TelegramBot telegramBot, UserRepository userRepository, NotificationTaskRepository notificationTaskRepository, SendingMessages sendingMessages) {
         this.telegramBot = telegramBot;
         this.userRepository = userRepository;
         this.notificationTaskRepository = notificationTaskRepository;
+        this.sendingMessages = sendingMessages;
     }
 
     /**
@@ -47,19 +50,19 @@ public class NewReminderCreate {
             reminderText = matcher.group(3);
         } else{
             var textToSend = EmojiParser.parseToUnicode("Неправильный формат напоминания " + ":confused:" + " Попробуйте еще раз, точно, как в образце!");
-            telegramBot.sendMessage(chatId, textToSend);
+            sendingMessages.sendMessage(chatId, textToSend);
             throw new RuntimeException("the user entered an incorrect reminder");
         }
         LocalDateTime dateTime = parseDateTime(chatId, date);
         User user = userRepository.findById(chatId).orElseThrow();
         if(dateTime.isBefore(LocalDateTime.now())){
             var textToSend = EmojiParser.parseToUnicode("Дата и время ранее текущего " + ":confused:" + " Попробуйте еще раз!");
-            telegramBot.sendMessage(user.getChatId(), textToSend);
+            sendingMessages.sendMessage(user.getChatId(), textToSend);
             log.info("the user entered a date earlier than the current one");
         } else {
             registerNewReminder(user, reminderText, dateTime);
             var textToSend = EmojiParser.parseToUnicode("Ваше напоминание успешно сохранено " + ":ok_hand:");
-            telegramBot.sendMessage(user.getChatId(), textToSend);
+            sendingMessages.sendMessage(user.getChatId(), textToSend);
         }
 
     }
@@ -76,7 +79,7 @@ public class NewReminderCreate {
             return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(telegramBot.getFORMATTER()));
         } catch (DateTimeParseException e){
             var textToSend = EmojiParser.parseToUnicode("Неправильный формат даты и времени " + ":confused:" + " Попробуйте еще раз!");
-            telegramBot.sendMessage(chatId, textToSend);
+            sendingMessages.sendMessage(chatId, textToSend);
             throw new RuntimeException("the user entered an incorrect date");
         }
 

@@ -1,11 +1,12 @@
 package com.example.kursovoybot.handrer.command;
 
 import com.example.kursovoybot.handrer.callback.help.Help;
+import com.example.kursovoybot.handrer.callback.UnknownCommand;
+import com.example.kursovoybot.handrer.callback.start.Start;
 import com.example.kursovoybot.service.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.Optional;
 
@@ -14,25 +15,29 @@ import java.util.Optional;
 public class CommandHandler {
 
     private final TelegramBot telegramBot;
-
     private final Help help;
+    private final UnknownCommand unknownCommand;
+    private final Start start;
 
-    public CommandHandler(TelegramBot telegramBot, Help help) {
+    public CommandHandler(TelegramBot telegramBot, Help help, UnknownCommand unknownCommand, Start start) {
         this.telegramBot = telegramBot;
         this.help = help;
+        this.unknownCommand = unknownCommand;
+        this.start = start;
     }
 
+    /**
+     *Обработка входящих команд.
+     *
+     * @param update  объект запроса
+     * @param chatId  id чата
+     * @param messageText  текст запроса
+     */
     public void commandProcessing(Update update, long chatId, String messageText){
-        Optional<Command> comand = Command.parseCommand(messageText);
-        //Обрабатываем входящие команды
-                    switch (comand.get()) {
+        Optional<Command> command = Command.parseCommand(messageText);
+        switch (command.get()) {
             case START_COMAND:
-                try {
-                    telegramBot.registerUser(update.getMessage());
-                    telegramBot.startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
-                }
+                start.startCallBack(chatId, update);
                 break;
 
             case HELP_COMAND:
@@ -53,8 +58,7 @@ public class CommandHandler {
 
             //Если введена неизвестная команда
             default:
-                telegramBot.sendMessage(chatId, "К сожалению Ваша команда не распознана. Пожалуйста выберите команду из меню.");
-                log.info("the user entered an unknown command");
+                unknownCommand.unknownCommandCallBack(chatId);
         }
     }
 

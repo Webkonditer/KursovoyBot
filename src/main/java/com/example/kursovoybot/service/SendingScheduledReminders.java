@@ -2,7 +2,6 @@ package com.example.kursovoybot.service;
 
 import com.example.kursovoybot.model.NotificationTask;
 import com.example.kursovoybot.repository.NotificationTaskRepository;
-import com.example.kursovoybot.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -15,13 +14,13 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 public class SendingScheduledReminders {
 
-    private final TelegramBot telegramBot;
-
     private final NotificationTaskRepository notificationTaskRepository;
 
-    public SendingScheduledReminders(TelegramBot telegramBot, NotificationTaskRepository notificationTaskRepository) {
-        this.telegramBot = telegramBot;
+    private final SendingMessages sendingMessages;
+
+    public SendingScheduledReminders(NotificationTaskRepository notificationTaskRepository, SendingMessages sendingMessages) {
         this.notificationTaskRepository = notificationTaskRepository;
+        this.sendingMessages = sendingMessages;
     }
 
     /**
@@ -33,10 +32,10 @@ public class SendingScheduledReminders {
 
         var reminders = notificationTaskRepository.findTheCurrentOnesForTheMoment(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
         for (NotificationTask reminder: reminders){
-            telegramBot.sendMessage(reminder.getUser().getChatId(), reminder.getReminderText());
+            sendingMessages.sendMessage(reminder.getUser().getChatId(), reminder.getReminderText());
             notificationTaskRepository.deleteById(reminder.getId());
+            log.info("Scheduled messages to user " + reminder.getUser().getChatId() + " sent: " + reminder.getReminderText());
         }
-        log.info("scheduled messages sent");
 
     }
 }

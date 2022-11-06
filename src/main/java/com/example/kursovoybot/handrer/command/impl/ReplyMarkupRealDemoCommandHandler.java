@@ -1,7 +1,7 @@
 package com.example.kursovoybot.handrer.command.impl;
 
 import com.example.kursovoybot.handrer.command.Command;
-import com.example.kursovoybot.entity.ReplyKeyboardButton;
+import com.example.kursovoybot.menu.PushButtonMenu;
 import com.example.kursovoybot.handrer.command.CommandHandler111;
 import com.example.kursovoybot.service.TelegramBot;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,19 +33,19 @@ public class ReplyMarkupRealDemoCommandHandler implements CommandHandler111 {
                         new KeyboardRow(
                             Arrays.asList(
                                 KeyboardButton.builder()
-                                    .text(ReplyKeyboardButton.HOME.getLabel())
+                                    .text(PushButtonMenu.HOME.getLabel())
                                     .build(),
                                 KeyboardButton.builder()
-                                    .text(ReplyKeyboardButton.SETTING.getLabel())
+                                    .text(PushButtonMenu.SETTING.getLabel())
                                     .build())))
                     .keyboardRow(
                         new KeyboardRow(
                             Arrays.asList(
                                 KeyboardButton.builder()
-                                    .text(ReplyKeyboardButton.INFO.getLabel())
+                                    .text(PushButtonMenu.INFO.getLabel())
                                     .build(),
                                 KeyboardButton.builder()
-                                    .text(ReplyKeyboardButton.STATISTIC.getLabel())
+                                    .text(PushButtonMenu.STATISTIC.getLabel())
                                     .build())))
                     .build())
             .build());

@@ -40,8 +40,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private final NewReminderCreate newReminderCreate;
 
-    //Информация, выводимая при выборе в меню раздела help
-
     private static final String YES_BUTTON = "YES_BUTTON";
     private static final String NO_BUTTON = "NO_BUTTON";
     private static final String CANCEL_BUTTON = "cancel";
@@ -108,7 +106,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (newMessageFlag.get(chatId) != null && newMessageFlag.get(chatId)) {
                 newMessageFlag.put(chatId, false);
                 newReminderCreate.createNewReminder(chatId, messageText);
-            } else if (messageText.trim().startsWith("/")) {
+            } else {
                 commandHandler.commandProcessing(update, chatId, messageText);
             }
         } else if (update.hasCallbackQuery()) {//Если нажата кнопка.
@@ -120,14 +118,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 newMessageFlag.put(chatId,true);
                 String text = "Отлично! Создайте Ваше новое напоминание, как на образце ниже:\n\n " +
                         "01.01.2023 12:00 С Новым годом меня любимого!";
-                executeEditMessageText(text, chatId, messageId);
+                //executeEditMessageText(text, chatId, messageId);
             } else if (callBackData.equals(NO_BUTTON) || callBackData.equals(CANCEL_BUTTON)) {
                 String text = "Хорошо! Выберите другое действие из меню.";
-                executeEditMessageText(text, chatId, messageId);
+                //executeEditMessageText(text, chatId, messageId);
             } else if (callBackData.contains("delete")) {
                 notificationTaskRepository.deleteById(Long.parseLong(callBackData.substring(7)));
                 String text = "Выбранное напоминание удалено.";
-                executeEditMessageText(text, chatId, messageId);
+                //executeEditMessageText(text, chatId, messageId);
                 log.info("the reminder was removed at the request of the user");
             }
 
@@ -183,7 +181,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern(FORMATTER));
             listOfReminders.append(dateTime).append(": ").append(reminder.getReminderText()).append("\n");
         }
-        sendMessage(chatId, listOfReminders.toString());
+        //sendMessage(chatId, listOfReminders.toString());
         log.info("all reminders have been issued at the user's request");
 
     }
@@ -219,100 +217,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /**
-     *Ррегистрирует нового пользователя в БД.
+     *Отправка сообщения пользователю.
      *
-     * @param msg  объект сообщения
+     * @param message  объект сообщения
      */
-    public void registerUser(Message msg) {
-        if (userRepository.findById(msg.getChatId()).isEmpty()) {
-
-            var chatId = msg.getChatId();
-            var chat = msg.getChat();
-            User user = new User();
-            user.setChatId(chatId);
-            user.setFirstName(chat.getFirstName());
-            user.setLastName(chat.getLastName());
-            user.setUserName(chat.getUserName());
-            user.setRegisteredAt(LocalDateTime.now());
-            userRepository.save(user);
-            log.info("user saved: " + user);
-
-        }
-    }
-
-    /**
-     *Обработка команды /start.
-     *
-     * @param chatId  id текущего чата
-     * @param firstName  имя пользователя
-     */
-    public void startCommandReceived(long chatId, String firstName) throws TelegramApiException {
-
-        String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! Пожалуйста выберите желаемое действие из меню ниже.");
-        sendStartMessage(chatId, answer);
-        log.info("Replaed to user " + firstName + " Id: " + chatId);
-
-    }
-
-    /**
-     *Подготовка сообщения пользователю.
-     *
-     * @param chatId  id текущего чата
-     * @param textToSend  текст сообщения
-     */
-    public void sendMessage(long chatId, String textToSend){
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(textToSend);
-        executeMessage(message);
-
-    }
-
-    /**
-     *Отправка приветственного сообщения пользователю и формирование нижнего меню.
-     *
-     * @param chatId  id текущего чата
-     * @param textToSend  текст сообщения
-     */
-    public void sendStartMessage(long chatId, String textToSend) throws TelegramApiException{
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(textToSend);
-
-        //Добавление клавиатуры к собщению.
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboardRows = new ArrayList<>();
-        KeyboardRow row = new KeyboardRow();
-//        row.add(HELP_COMAND);//Добавление кнопки
-//        row.add(CREATE_COMAND);
-//        keyboardRows.add(row);//Добавление строки кнопок
-//        row = new KeyboardRow();
-//        row.add(SHOW_COMAND);
-//        row.add(DELETE_COMAND);
-//        keyboardRows.add(row);
-//        keyboardMarkup.setKeyboard(keyboardRows);//Формирование клавиатуры
-//        message.setReplyMarkup(keyboardMarkup);//Добавление клавиатуры
-        //----------------------------------------
-
-        executeMessage(message);
-    }
-
-
-    /**
-     *Отправка измененного сообщения пользователю.
-     *
-     * @param text  текст сообщения
-     * @param chatId  id текущего чата
-     * @param messageId  id изменяемого сообщения
-     */
-    private void executeEditMessageText(String text, long chatId, long messageId){
-
-        EditMessageText message = new EditMessageText();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(text);
-        message.setMessageId((int)messageId);
+    void executeMessage(SendMessage message){
 
         try{
             execute(message);
@@ -322,12 +231,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
-    /**
-     *Отправка сообщения пользователю.
-     *
-     * @param message  объект сообщения
-     */
-    private void executeMessage(SendMessage message){
+    void executeMessage(EditMessageText message){
 
         try{
             execute(message);

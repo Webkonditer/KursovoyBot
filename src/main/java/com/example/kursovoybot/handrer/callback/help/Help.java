@@ -1,6 +1,7 @@
 package com.example.kursovoybot.handrer.callback.help;
 
 import com.example.kursovoybot.handrer.command.Command;
+import com.example.kursovoybot.service.SendingMessages;
 import com.example.kursovoybot.service.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,9 +14,11 @@ public class Help {
     private Command command;
 
     private TelegramBot telegramBot;
+    private SendingMessages sendingMessages;
 
-    public Help(TelegramBot telegramBot) {
+    public Help(TelegramBot telegramBot, SendingMessages sendingMessages) {
         this.telegramBot = telegramBot;
+        this.sendingMessages = sendingMessages;
     }
 
     private static final String HELP_TEXT = """
@@ -27,18 +30,24 @@ public class Help {
 
             Команда %s выводит раздел помощи.
 
-            Команда /create_a_reminder создает новое напоминание.
+            Команда %s создает новое напоминание.
 
-            Команда /show_my_reminders выводит все Ваши напоминания.
+            Команда %s выводит все Ваши напоминания.
 
-            Команда /delete удаляет напоминание.
+            Команда %s удаляет напоминание.
                         
-            Команда /about выводит сведения о боте.
-            """.formatted(Command.START_COMAND.getName(),
-                                Command.HELP_COMAND.getName());
+            Команда %s выводит сведения о боте.
+            """.formatted(
+                                Command.START_COMAND.getName(),
+                                Command.HELP_COMAND.getName(),
+                                Command.CREATE_COMAND.getName(),
+                                Command.SHOW_COMAND.getName(),
+                                Command.DELETE_COMAND.getName(),
+                                Command.ABOUT_COMAND.getName()
+                         );
 
     public void helpCallBack(long chatId){
-        telegramBot.sendMessage(chatId, HELP_TEXT);
+        sendingMessages.sendMessage(chatId, HELP_TEXT);
     }
 
 }
