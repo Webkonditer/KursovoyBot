@@ -1,6 +1,8 @@
 package com.example.kursovoybot.service;
 
 import com.example.kursovoybot.config.BotConfig;
+import com.example.kursovoybot.handrer.command.Command;
+import com.example.kursovoybot.handrer.command.CommandHandler;
 import com.example.kursovoybot.model.NotificationTask;
 import com.example.kursovoybot.model.User;
 import com.example.kursovoybot.repository.NotificationTaskRepository;
@@ -16,7 +18,6 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -25,10 +26,13 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
+
+    private final CommandHandler commandHandler;
 
     private final UserRepository userRepository;
 
@@ -37,32 +41,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final NewReminderCreate newReminderCreate;
 
     //Информация, выводимая при выборе в меню раздела help
-    private static final String HELP_TEXT = """
-            Этот бот предназначен для создания напоминалок. Любой пользователь бота может установить в нем напоминания для себя. И бот в назначенное время покажет именно этому пользователю его напоминание.
-
-            В меню доступны следующие команды:
-
-            Команда /start выводит приветственное сообщение и регистрирует пользователя в базе.
-
-            Команда /help выводит раздел помощи.
-
-            Команда /create_a_reminder создает новое напоминание.
-
-            Команда /show_my_reminders выводит все Ваши напоминания.
-
-            Команда /delete удаляет напоминание.""";
 
     private static final String YES_BUTTON = "YES_BUTTON";
     private static final String NO_BUTTON = "NO_BUTTON";
     private static final String CANCEL_BUTTON = "cancel";
-    private static final String START_COMAND = "/start";
-    private static final String HELP_COMAND = "/help";
-    private static final String CREATE_COMAND = "/create_a_reminder";
-    private static final String SHOW_COMAND = "/show_my_reminders";
-    private static final String DELETE_COMAND = "/delete";
 
     private final String FORMATTER = "dd.MM.yyyy HH:mm";
-
 
     private final BotConfig config;
 
@@ -72,26 +56,28 @@ public class TelegramBot extends TelegramLongPollingBot {
     public TelegramBot(BotConfig config,
                        UserRepository userRepository,
                        NotificationTaskRepository notificationTaskRepository,
-                       @Lazy NewReminderCreate newReminderCreate)
+                       @Lazy NewReminderCreate newReminderCreate,
+                       @Lazy CommandHandler commandHandler)
     {
-
+        this.commandHandler = commandHandler;
         this.config = config;
         this.userRepository = userRepository;
         this.notificationTaskRepository = notificationTaskRepository;
         this.newReminderCreate = newReminderCreate;
+        setupCommands();
+    }
 
-        //Создание пунктов основного меню
-        List<BotCommand> listOfCommands = new ArrayList<>();
-        listOfCommands.add(new BotCommand(START_COMAND, "регистрирует пользователя"));
-        listOfCommands.add(new BotCommand(HELP_COMAND, "выводит справку по боту"));
-        listOfCommands.add(new BotCommand(CREATE_COMAND, "создает новое напоминание"));
-        listOfCommands.add(new BotCommand(SHOW_COMAND, "список Ваших напоминаний"));
-        listOfCommands.add(new BotCommand(DELETE_COMAND, "удаляет напоминание"));
+    /**
+     *Создание меню.
+     *
+     */
+    private void setupCommands() {
         try {
-            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
-        } catch (TelegramApiException e) {
-            log.error("Error setting bot`s command list: " + e.getMessage());
-        }
+            List<BotCommand> commands = Arrays.stream(Command.values())
+                            .map(c -> BotCommand.builder().command(c.getName()).description(c.getDesc()).build())
+                            .collect(Collectors.toList());
+            execute(SetMyCommands.builder().commands(commands).build());
+        } catch (Exception e) {e.printStackTrace();}
     }
 
     @Override
@@ -122,40 +108,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (newMessageFlag.get(chatId) != null && newMessageFlag.get(chatId)) {
                 newMessageFlag.put(chatId, false);
                 newReminderCreate.createNewReminder(chatId, messageText);
-            } else {
-
-                //Обрабатываем входящие команды
-                switch (messageText) {
-                    case START_COMAND:
-                        try {
-                            registerUser(update.getMessage());
-                            startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                        } catch (TelegramApiException e) {
-                            throw new RuntimeException(e);
-                        }
-                        break;
-
-                    case HELP_COMAND:
-                            sendMessage(chatId, HELP_TEXT);
-                        break;
-
-                    case CREATE_COMAND:
-                        createNewReminder(chatId);
-                        break;
-
-                    case SHOW_COMAND:
-                        showMyReminders(chatId);
-                        break;
-
-                    case DELETE_COMAND:
-                        delete(chatId);
-                        break;
-
-                    //Если введена неизвестная команда
-                    default:
-                        sendMessage(chatId, "К сожалению Ваша команда не распознана. Пожалуйста выберите команду из меню.");
-                        log.info("the user entered an unknown command");
-                }
+            } else if (messageText.trim().startsWith("/")) {
+                commandHandler.commandProcessing(update, chatId, messageText);
             }
         } else if (update.hasCallbackQuery()) {//Если нажата кнопка.
 
@@ -185,7 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      *
      * @param chatId  id текущего чата
      */
-    private void delete(long chatId) {
+    public void delete(long chatId) {
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -221,7 +175,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      *
      * @param chatId  id текущего чата
      */
-    private void showMyReminders(long chatId) {
+    public void showMyReminders(long chatId) {
 
         var reminders = notificationTaskRepository.findAllByUserId(chatId);
         StringBuilder listOfReminders = new StringBuilder();
@@ -239,7 +193,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      *
      * @param chatId  id текущего чата
      */
-    private void createNewReminder(long chatId) {
+    public void createNewReminder(long chatId) {
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -269,7 +223,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      *
      * @param msg  объект сообщения
      */
-    private void registerUser(Message msg) {
+    public void registerUser(Message msg) {
         if (userRepository.findById(msg.getChatId()).isEmpty()) {
 
             var chatId = msg.getChatId();
@@ -292,7 +246,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      * @param chatId  id текущего чата
      * @param firstName  имя пользователя
      */
-    private void startCommandReceived(long chatId, String firstName) throws TelegramApiException {
+    public void startCommandReceived(long chatId, String firstName) throws TelegramApiException {
 
         String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! Пожалуйста выберите желаемое действие из меню ниже.");
         sendStartMessage(chatId, answer);
@@ -306,7 +260,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      * @param chatId  id текущего чата
      * @param textToSend  текст сообщения
      */
-    void sendMessage(long chatId, String textToSend){
+    public void sendMessage(long chatId, String textToSend){
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -321,7 +275,7 @@ public class TelegramBot extends TelegramLongPollingBot {
      * @param chatId  id текущего чата
      * @param textToSend  текст сообщения
      */
-    private void sendStartMessage(long chatId, String textToSend) throws TelegramApiException{
+    public void sendStartMessage(long chatId, String textToSend) throws TelegramApiException{
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -331,15 +285,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboardRows = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
-        row.add(HELP_COMAND);//Добавление кнопки
-        row.add(CREATE_COMAND);
-        keyboardRows.add(row);//Добавление строки кнопок
-        row = new KeyboardRow();
-        row.add(SHOW_COMAND);
-        row.add(DELETE_COMAND);
-        keyboardRows.add(row);
-        keyboardMarkup.setKeyboard(keyboardRows);//Формирование клавиатуры
-        message.setReplyMarkup(keyboardMarkup);//Добавление клавиатуры
+//        row.add(HELP_COMAND);//Добавление кнопки
+//        row.add(CREATE_COMAND);
+//        keyboardRows.add(row);//Добавление строки кнопок
+//        row = new KeyboardRow();
+//        row.add(SHOW_COMAND);
+//        row.add(DELETE_COMAND);
+//        keyboardRows.add(row);
+//        keyboardMarkup.setKeyboard(keyboardRows);//Формирование клавиатуры
+//        message.setReplyMarkup(keyboardMarkup);//Добавление клавиатуры
         //----------------------------------------
 
         executeMessage(message);
