@@ -2,6 +2,7 @@ package com.example.kursovoybot.handrer.command;
 
 import com.example.kursovoybot.handrer.callback.help.Help;
 import com.example.kursovoybot.handrer.callback.UnknownCommand;
+import com.example.kursovoybot.handrer.callback.delete.deleteReminder;
 import com.example.kursovoybot.handrer.callback.start.Start;
 import com.example.kursovoybot.service.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +16,14 @@ import java.util.Optional;
 public class CommandHandler {
 
     private final TelegramBot telegramBot;
+    private final deleteReminder newReminder;
     private final Help help;
     private final UnknownCommand unknownCommand;
     private final Start start;
 
-    public CommandHandler(TelegramBot telegramBot, Help help, UnknownCommand unknownCommand, Start start) {
+    public CommandHandler(TelegramBot telegramBot, deleteReminder newReminder, Help help, UnknownCommand unknownCommand, Start start) {
         this.telegramBot = telegramBot;
+        this.newReminder = newReminder;
         this.help = help;
         this.unknownCommand = unknownCommand;
         this.start = start;
@@ -45,7 +48,7 @@ public class CommandHandler {
                 break;
 
             case CREATE_COMAND:
-                telegramBot.createNewReminder(chatId);
+                newReminder.createNewReminder(chatId);
                 break;
 
             case SHOW_COMAND:

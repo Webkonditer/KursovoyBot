@@ -98,7 +98,7 @@ public class SendingMessages {
      *
      * @param message  объект сообщения
      */
-    void executeMessage(SendMessage message){
+    public void executeMessage(SendMessage message){
 
         try{
             telegramBot.execute(message);

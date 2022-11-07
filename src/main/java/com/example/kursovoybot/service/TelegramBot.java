@@ -1,13 +1,12 @@
 package com.example.kursovoybot.service;
 
 import com.example.kursovoybot.config.BotConfig;
+import com.example.kursovoybot.handrer.callback.delete.NewReminderButton;
 import com.example.kursovoybot.handrer.command.Command;
 import com.example.kursovoybot.handrer.command.CommandHandler;
 import com.example.kursovoybot.model.NotificationTask;
-import com.example.kursovoybot.model.User;
 import com.example.kursovoybot.repository.NotificationTaskRepository;
 import com.example.kursovoybot.repository.UserRepository;
-import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -15,15 +14,12 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import java.time.LocalDateTime;
+
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,8 +36,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private final NewReminderCreate newReminderCreate;
 
-    private static final String YES_BUTTON = "YES_BUTTON";
-    private static final String NO_BUTTON = "NO_BUTTON";
     private static final String CANCEL_BUTTON = "cancel";
 
     private final String FORMATTER = "dd.MM.yyyy HH:mm";
@@ -114,12 +108,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             String callBackData = update.getCallbackQuery().getData();
             long messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (callBackData.equals(YES_BUTTON)) {
+            if (callBackData.equals(NewReminderButton.YES_BUTTON.getData())) {
                 newMessageFlag.put(chatId,true);
                 String text = "Отлично! Создайте Ваше новое напоминание, как на образце ниже:\n\n " +
                         "01.01.2023 12:00 С Новым годом меня любимого!";
                 //executeEditMessageText(text, chatId, messageId);
-            } else if (callBackData.equals(NO_BUTTON) || callBackData.equals(CANCEL_BUTTON)) {
+            } else if (callBackData.equals(NewReminderButton.NO_BUTTON.getData()) || callBackData.equals(CANCEL_BUTTON)) {
                 String text = "Хорошо! Выберите другое действие из меню.";
                 //executeEditMessageText(text, chatId, messageId);
             } else if (callBackData.contains("delete")) {
@@ -186,35 +180,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
-    /**
-     *Обработка запроса на создание нового напоминания.
-     *
-     * @param chatId  id текущего чата
-     */
-    public void createNewReminder(long chatId) {
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Вы хотите создать новое напоминание?");
-
-        //Добавление кнопок Да Нет
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        var yesButton = new InlineKeyboardButton();
-        yesButton.setText("Да");
-        yesButton.setCallbackData(YES_BUTTON);
-        var noButton = new InlineKeyboardButton();
-        noButton.setText("Нет");
-        noButton.setCallbackData(NO_BUTTON);
-        rowInline.add(yesButton);
-        rowInline.add(noButton);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
-        message.setReplyMarkup(markupInline);
-
-        executeMessage(message);
-    }
 
     /**
      *Отправка сообщения пользователю.

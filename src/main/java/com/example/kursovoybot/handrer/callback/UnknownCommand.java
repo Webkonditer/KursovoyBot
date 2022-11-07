@@ -19,7 +19,7 @@ public class UnknownCommand {
 
     public void unknownCommandCallBack(long chatId){
         sendingMessages.sendMessage(chatId, ERRONEOUS_COMMAND);
-        log.info("the user" + chatId + "entered an unknown command");
+        log.info("User " + chatId + " entered an unknown command");
     }
 
 }

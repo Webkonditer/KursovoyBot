@@ -11,7 +11,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Slf4j
 public class Start {
 
-    private UserManagement userManagement;
+    private static final String WELCOME_MESSAGE = "\nЯ - твоя вторая память. Можешь смело доверить мне напоминать тебе о важных событиях. \n" +
+            "Давай создадим твое первое напоминание. Нажми кнопку \"Создать новое\" в меню ниже.";
+
+    private final UserManagement userManagement;
     private final SendingMessages sendingMessages;
 
     public Start(UserManagement userManagement, SendingMessages sendingMessages) {
@@ -34,7 +37,7 @@ public class Start {
 
     public void startCommandReceived(long chatId, String firstName) {
 
-        String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! Пожалуйста выберите желаемое действие из меню ниже.");
+        String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! " + WELCOME_MESSAGE);
         sendingMessages.sendStartMessage(chatId, answer);
         log.info("A welcome message has been sent to the user " + firstName + ", Id: " + chatId);
 
