@@ -33,10 +33,22 @@ public class UserManagement {
             user.setFirstName(chat.getFirstName());
             user.setLastName(chat.getLastName());
             user.setUserName(chat.getUserName());
+            user.setUserUtc(3);
             user.setRegisteredAt(LocalDateTime.now());
             userRepository.save(user);
             log.info("user saved: " + user);
 
         }
     }
+
+    /**
+     *Получение часового пояса пользователя.
+     *
+     * @param chatId  объект сообщения
+     */
+    public Integer getUserUtc(long chatId) {
+        User user = userRepository.findById(chatId).orElseThrow();
+        return user.getUserUtc();
+    }
+
 }

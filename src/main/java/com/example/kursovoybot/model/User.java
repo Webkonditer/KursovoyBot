@@ -21,6 +21,8 @@ public class User {
 
     private String userName;
 
+    private Integer userUtc;
+
     private LocalDateTime registeredAt;
 
     @JsonIgnore
@@ -65,6 +67,14 @@ public class User {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public Integer getUserUtc() {
+        return userUtc;
+    }
+
+    public void setUserUtc(Integer userUtc) {
+        this.userUtc = userUtc;
     }
 
     public LocalDateTime getRegisteredAt() {

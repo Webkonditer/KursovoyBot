@@ -1,10 +1,14 @@
 package com.example.kursovoybot.handrer.command;
 
+import com.example.kursovoybot.handrer.callback.about.AboutBot;
 import com.example.kursovoybot.handrer.callback.help.Help;
 import com.example.kursovoybot.handrer.callback.UnknownCommand;
-import com.example.kursovoybot.handrer.callback.delete.deleteReminder;
+import com.example.kursovoybot.handrer.callback.delete.DeleteReminder;
+import com.example.kursovoybot.handrer.callback.newreminder.CreateNewReminder;
+import com.example.kursovoybot.handrer.callback.setutc.SetUtc;
+import com.example.kursovoybot.handrer.callback.show.ShowAllReminders;
 import com.example.kursovoybot.handrer.callback.start.Start;
-import com.example.kursovoybot.service.TelegramBot;
+import com.example.kursovoybot.bot.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -16,17 +20,25 @@ import java.util.Optional;
 public class CommandHandler {
 
     private final TelegramBot telegramBot;
-    private final deleteReminder newReminder;
-    private final Help help;
+    private final DeleteReminder deleteReminder;
+    private final CreateNewReminder createNewReminder;
     private final UnknownCommand unknownCommand;
+    private final ShowAllReminders showAllReminders;
     private final Start start;
+    private final Help help;
+    private final AboutBot aboutBot;
+    private final SetUtc setUtc;
 
-    public CommandHandler(TelegramBot telegramBot, deleteReminder newReminder, Help help, UnknownCommand unknownCommand, Start start) {
+    public CommandHandler(TelegramBot telegramBot, DeleteReminder newReminder, DeleteReminder deleteReminder, CreateNewReminder createNewReminder, Help help, UnknownCommand unknownCommand, ShowAllReminders showAllReminders, Start start, AboutBot aboutBot, SetUtc setUtc) {
         this.telegramBot = telegramBot;
-        this.newReminder = newReminder;
+        this.deleteReminder = deleteReminder;
+        this.createNewReminder = createNewReminder;
         this.help = help;
         this.unknownCommand = unknownCommand;
+        this.showAllReminders = showAllReminders;
         this.start = start;
+        this.aboutBot = aboutBot;
+        this.setUtc = setUtc;
     }
 
     /**
@@ -38,30 +50,18 @@ public class CommandHandler {
      */
     public void commandProcessing(Update update, long chatId, String messageText){
         Optional<Command> command = Command.parseCommand(messageText);
-        switch (command.get()) {
-            case START_COMAND:
-                start.startCallBack(chatId, update);
-                break;
-
-            case HELP_COMAND:
-                help.helpCallBack(chatId);
-                break;
-
-            case CREATE_COMAND:
-                newReminder.createNewReminder(chatId);
-                break;
-
-            case SHOW_COMAND:
-                telegramBot.showMyReminders(chatId);
-                break;
-
-            case DELETE_COMAND:
-                telegramBot.delete(chatId);
-                break;
-
-            //Если введена неизвестная команда
-            default:
-                unknownCommand.unknownCommandCallBack(chatId);
+        if(command.isPresent()) {
+            switch (command.get()) {
+                case START_COMAND -> start.startCallBack(chatId, update);
+                case HELP_COMAND -> help.helpCallBack(chatId);
+                case CREATE_COMAND -> createNewReminder.preparingToCreateNewReminder(chatId);
+                case SHOW_COMAND -> showAllReminders.showMyReminders(chatId);
+                case DELETE_COMAND -> deleteReminder.preparingForDeletion(chatId);
+                case ABOUT_COMAND -> aboutBot.aboutCallBack(chatId);
+                case SET_UTS -> setUtc.preparingForSetUtc(chatId);
+            }
+        } else{
+            unknownCommand.unknownCommandCallBack(chatId);//Если введена неизвестная команда
         }
     }
 

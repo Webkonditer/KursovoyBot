@@ -1,7 +1,6 @@
 package com.example.kursovoybot.handrer.callback;
 
 import com.example.kursovoybot.service.SendingMessages;
-import com.example.kursovoybot.service.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,7 @@ public class UnknownCommand {
 
     private final SendingMessages sendingMessages;
 
-    private static final String ERRONEOUS_COMMAND = "К сожалению Ваша команда не распознана. Пожалуйста выберите команду из меню.";
+    private static final String ERRONEOUS_COMMAND = "\uD83D\uDE32 Ой! Ничего не понял! Пожалуйста, выбери команду из меню.";
 
     public UnknownCommand(SendingMessages sendingMessages) {
         this.sendingMessages = sendingMessages;

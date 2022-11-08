@@ -1,5 +1,6 @@
 package com.example.kursovoybot.service;
 
+import com.example.kursovoybot.bot.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -43,7 +44,7 @@ public class SendingMessages {
      * @param chatId  id текущего чата
      * @param textToSend  текст сообщения
      */
-    public void sendStartMessage(long chatId, String textToSend) {
+    public void sendMessageWithMenu(long chatId, String textToSend) {
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -79,7 +80,7 @@ public class SendingMessages {
      * @param chatId  id текущего чата
      * @param messageId  id изменяемого сообщения
      */
-    private void executeEditMessageText(String text, long chatId, long messageId){
+    public void executeEditMessageText(String text, long chatId, long messageId){
 
         EditMessageText message = new EditMessageText();
         message.setChatId(String.valueOf(chatId));

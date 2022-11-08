@@ -13,12 +13,13 @@ import java.util.stream.Stream;
 @Getter
 @RequiredArgsConstructor
 public enum Command {
-  START_COMAND("/start", "регистрирует пользователя", "Домой \uD83C\uDFE1"),
-  HELP_COMAND("/help", "выводит справку по боту", "❓ Справка"),
-  CREATE_COMAND("/create_a_reminder", "создает новое напоминание", "✍️ Создать новое"),
-  SHOW_COMAND("/show_my_reminders", "выводит список Ваших напоминаний", "\uD83D\uDCD6 Показать все мои напоминания"),
-  DELETE_COMAND("/delete", "удаляет напоминание", "⛔️ Удалить"),
-  ABOUT_COMAND("/about", "информация о боте", "\uD83D\uDCD4 О боте");
+  START_COMAND("/start", "Регистрация пользователя", "Домой \uD83C\uDFE1"),
+  HELP_COMAND("/help", "Справка по боту", "❓ Справка"),
+  CREATE_COMAND("/create_a_reminder", "Создание нового напоминания", "✍️ Создать новое"),
+  SHOW_COMAND("/show_my_reminders", "Все напоминания", "\uD83D\uDCD9 Показать все мои напоминания"),
+  DELETE_COMAND("/delete", "Удаление напоминания", "⛔️ Удалить"),
+  ABOUT_COMAND("/about", "Информация о боте", "\uD83D\uDCD4 О боте"),
+  SET_UTS("/set_utc", "Изменение часового пояса", "\uD83D\uDD58 Изменить часовой пояс");
 
   private final String name;
   private final String desc;

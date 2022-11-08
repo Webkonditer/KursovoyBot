@@ -11,8 +11,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Slf4j
 public class Start {
 
-    private static final String WELCOME_MESSAGE = "\nЯ - твоя вторая память. Можешь смело доверить мне напоминать тебе о важных событиях. \n" +
-            "Давай создадим твое первое напоминание. Нажми кнопку \"Создать новое\" в меню ниже.";
+    private static final String GREETING = "\uD83D\uDE00 Привет ";
+
+    private static final String WELCOME_MESSAGE = "\n\nЯ - твоя вторая память. Можешь смело доверить мне напоминать тебе о важных событиях. \n\n" +
+            "Если твой часовой пояс отличается от Московского, нажми сюда /set_utc \n\n" +
+            "Теперь давай создадим твое первое напоминание. \nНажми кнопку \"Создать новое\" в меню ниже.";
 
     private final UserManagement userManagement;
     private final SendingMessages sendingMessages;
@@ -29,16 +32,20 @@ public class Start {
      * @param update  объект сообщения
      */
     public void startCallBack(long chatId, Update update){
-
             userManagement.registerUser(update.getMessage());
             startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-
     }
 
+    /**
+     *Отправка приветственного сообщения и выбор часового пояса.
+     *
+     * @param chatId  id текущего чата
+     * @param firstName  имя пользователя
+     */
     public void startCommandReceived(long chatId, String firstName) {
 
-        String answer = EmojiParser.parseToUnicode("Привет, " + firstName + ":blush:" + "! " + WELCOME_MESSAGE);
-        sendingMessages.sendStartMessage(chatId, answer);
+        String message = GREETING + firstName + "! " + WELCOME_MESSAGE;
+        sendingMessages.sendMessageWithMenu(chatId, message);
         log.info("A welcome message has been sent to the user " + firstName + ", Id: " + chatId);
 
     }

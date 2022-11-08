@@ -1,4 +1,4 @@
-package com.example.kursovoybot.config;
+package com.example.kursovoybot.bot;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;

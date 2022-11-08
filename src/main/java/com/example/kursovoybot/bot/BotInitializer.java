@@ -1,8 +1,7 @@
-package com.example.kursovoybot.config;
+package com.example.kursovoybot.bot;
 
-import com.example.kursovoybot.service.TelegramBot;
+import com.example.kursovoybot.bot.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

@@ -2,10 +2,9 @@ package com.example.kursovoybot.handrer.callback.help;
 
 import com.example.kursovoybot.handrer.command.Command;
 import com.example.kursovoybot.service.SendingMessages;
-import com.example.kursovoybot.service.TelegramBot;
+import com.example.kursovoybot.bot.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import java.lang.String.*;
 
 @Component
 @Slf4j
