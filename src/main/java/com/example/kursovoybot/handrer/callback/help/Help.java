@@ -21,32 +21,40 @@ public class Help {
     }
 
     private static final String HELP_TEXT = """
-            Этот бот предназначен для создания напоминалок. Любой пользователь бота может установить в нем напоминания для себя. И бот в назначенное время покажет именно этому пользователю его напоминание.
+            Я напомню тебе о самых важных событиях в твоей жизни. 
+            Запланируй мероприятия, сохрани дни рождения друзей и близких или другие события.
+            Я пришлю тебе напоминание в назначенный день и час.
 
-            В меню доступны следующие команды:
+            В моем меню доступны следующие команды:
 
-            Команда  %s выводит приветственное сообщение и регистрирует пользователя в базе.
+            Команда  %s выводит приветственное сообщение и подключает тебя к боту.
 
             Команда %s выводит раздел помощи.
 
             Команда %s создает новое напоминание.
 
-            Команда %s выводит все Ваши напоминания.
+            Команда %s выводит все твои напоминания.
 
             Команда %s удаляет напоминание.
                         
             Команда %s выводит сведения о боте.
+            
+            Команда %s позволяет установить часовой пояс.
+            
+            Команда %s отписывает тебя от бота.
             """.formatted(
                                 Command.START_COMAND.getName(),
                                 Command.HELP_COMAND.getName(),
                                 Command.CREATE_COMAND.getName(),
                                 Command.SHOW_COMAND.getName(),
                                 Command.DELETE_COMAND.getName(),
-                                Command.ABOUT_COMAND.getName()
+                                Command.ABOUT_COMAND.getName(),
+                                Command.SET_UTS.getName(),
+                                Command.UNSUBSCRIBE_USER.getName()
                          );
 
     public void helpCallBack(long chatId){
-        sendingMessages.sendMessage(chatId, HELP_TEXT);
+        sendingMessages.sendMessageWithMenu(chatId, HELP_TEXT);
     }
 
 }

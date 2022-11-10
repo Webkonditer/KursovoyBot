@@ -19,7 +19,8 @@ public enum Command {
   SHOW_COMAND("/show_my_reminders", "Все напоминания", "\uD83D\uDCD9 Показать все мои напоминания"),
   DELETE_COMAND("/delete", "Удаление напоминания", "⛔️ Удалить"),
   ABOUT_COMAND("/about", "Информация о боте", "\uD83D\uDCD4 О боте"),
-  SET_UTS("/set_utc", "Изменение часового пояса", "\uD83D\uDD58 Изменить часовой пояс");
+  SET_UTS("/set_utc", "Изменение часового пояса", "\uD83D\uDD58 Изменить часовой пояс"),
+  UNSUBSCRIBE_USER("/unsubscribe", "Отписаться от бота", "\uD83D\uDD58 Отписаться");
 
   private final String name;
   private final String desc;

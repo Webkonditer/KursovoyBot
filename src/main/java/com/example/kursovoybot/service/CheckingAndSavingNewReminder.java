@@ -61,12 +61,12 @@ public class CheckingAndSavingNewReminder {
         }
         LocalDateTime dateTime = parseDateTime(chatId, date);
         User user = userRepository.findById(chatId).orElseThrow();
-        if(dateTime.isBefore(LocalDateTime.now())){
-            sendingMessages.sendMessage(user.getChatId(), DATE_EARLIER_THAN_CURRENT);
+        if(dateTime.plusHours(3).minusHours(user.getUserUtc()).isBefore(LocalDateTime.now())){
+            sendingMessages.sendMessageWithMenu(user.getChatId(), DATE_EARLIER_THAN_CURRENT);
             log.info("the user entered a date earlier than the current one");
         } else {
             registerNewReminder(user, reminderText, dateTime);
-            sendingMessages.sendMessage(user.getChatId(), SUCCESSFULLY_SAVED);
+            sendingMessages.sendMessageWithMenu(user.getChatId(), SUCCESSFULLY_SAVED);
         }
 
     }
@@ -97,6 +97,7 @@ public class CheckingAndSavingNewReminder {
      */
     private void registerNewReminder(User user, String reminderText, LocalDateTime dateTime) {
 
+        dateTime = dateTime.plusHours(3).minusHours(user.getUserUtc());// Подстройка под часовой пояс пользователя
         NotificationTask reminder = new NotificationTask();
         reminder.setUser(user);
         reminder.setReminderText(reminderText);

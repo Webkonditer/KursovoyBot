@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -39,7 +40,7 @@ public class SendingMessages {
     }
 
     /**
-     *Отправка приветственного сообщения пользователю и формирование нижнего меню.
+     *Отправка сообщения пользователю и формирование нижнего меню.
      *
      * @param chatId  id текущего чата
      * @param textToSend  текст сообщения
@@ -80,12 +81,15 @@ public class SendingMessages {
      * @param chatId  id текущего чата
      * @param messageId  id изменяемого сообщения
      */
-    public void executeEditMessageText(String text, long chatId, long messageId){
+    public void executeEditMessageText(String text, long chatId, long messageId, InlineKeyboardMarkup markupInline){
 
         EditMessageText message = new EditMessageText();
         message.setChatId(String.valueOf(chatId));
         message.setText(text);
         message.setMessageId((int)messageId);
+        if(markupInline != null){
+            message.setReplyMarkup(markupInline);
+        }
         try{
             telegramBot.execute(message);
         } catch (TelegramApiException e){

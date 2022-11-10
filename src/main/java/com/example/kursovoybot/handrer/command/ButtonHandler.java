@@ -3,8 +3,10 @@ package com.example.kursovoybot.handrer.command;
 import com.example.kursovoybot.bot.TelegramBot;
 import com.example.kursovoybot.handrer.callback.delete.DeleteReminder;
 import com.example.kursovoybot.handrer.callback.setutc.SetUtc;
+import com.example.kursovoybot.handrer.callback.unsubscribe.UnsubscribeUser;
 import com.example.kursovoybot.repository.NotificationTaskRepository;
 import com.example.kursovoybot.service.SendingMessages;
+import com.example.kursovoybot.service.UserManagement;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -15,16 +17,16 @@ import static com.example.kursovoybot.handrer.callback.delete.DeleteReminder.CAN
 @Slf4j
 public class ButtonHandler {
 
-    private final NotificationTaskRepository notificationTaskRepository;
-    private final TelegramBot telegramBot;
+    private final UserManagement userManagement;
     private final SetUtc setUtc;
     private final DeleteReminder deleteReminder;
+    private final UnsubscribeUser unsubscribeUser;
 
-    public ButtonHandler(NotificationTaskRepository notificationTaskRepository, TelegramBot telegramBot, SendingMessages sendingMessages, SetUtc setUtc, DeleteReminder deleteReminder) {
-        this.notificationTaskRepository = notificationTaskRepository;
-        this.telegramBot = telegramBot;
+    public ButtonHandler(NotificationTaskRepository notificationTaskRepository, TelegramBot telegramBot, SendingMessages sendingMessages, UserManagement userManagement, SetUtc setUtc, DeleteReminder deleteReminder, UnsubscribeUser unsubscribeUser) {
+        this.userManagement = userManagement;
         this.setUtc = setUtc;
         this.deleteReminder = deleteReminder;
+        this.unsubscribeUser = unsubscribeUser;
     }
 
     public void processingOfButtons(Update update){
@@ -34,9 +36,17 @@ public class ButtonHandler {
         if (callBackData.contains("delete")) {
             deleteReminder.delete(callBackData, chatId, messageId);
         } else if (callBackData.equals(CANCEL_BUTTON)) {
-            deleteReminder.cancelDelete(callBackData, chatId, messageId);
+            deleteReminder.cancelDelete(chatId, messageId);
         }else if (callBackData.equals("setUtcAll")) {
-            setUtc.getAll(chatId);
+            setUtc.getAll(chatId, messageId);
+        }else if (callBackData.startsWith("setUtc_")) {
+            userManagement.setUtc(chatId, callBackData);
+            setUtc.sendReply(chatId, messageId);
+        }else if (callBackData.equals("unsubscribeNo")) {
+            unsubscribeUser.doNotUnsubscribe(chatId, messageId);
+        }else if (callBackData.equals("unsubscribeYes")) {
+            userManagement.deleteUser(chatId);
+            unsubscribeUser.Unsubscribe(chatId, messageId);
         }
     }
 }

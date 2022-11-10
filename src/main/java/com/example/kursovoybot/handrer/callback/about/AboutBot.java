@@ -28,6 +28,6 @@ public class AboutBot {
     }
 
     public void aboutCallBack(long chatId) {
-        sendingMessages.sendMessage(chatId, ABOUT_MESSAGE);
+        sendingMessages.sendMessageWithMenu(chatId, ABOUT_MESSAGE);
     }
 }

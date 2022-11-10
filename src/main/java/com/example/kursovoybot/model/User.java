@@ -2,13 +2,12 @@ package com.example.kursovoybot.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static javax.persistence.CascadeType.ALL;
 
 @Entity(name = "usersDataTable")
 public class User {
@@ -26,7 +25,7 @@ public class User {
     private LocalDateTime registeredAt;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(cascade=ALL, mappedBy="user")
     private List<NotificationTask> reminders;
 
     public Long getChatId() {

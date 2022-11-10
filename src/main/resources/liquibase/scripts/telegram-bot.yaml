@@ -25,6 +25,9 @@ databaseChangeLog:
               - column:
                   name: user_name
                   type: varchar(255)
+              - column:
+                  name: user_utc
+                  type: integer
 
   - changeSet:
       id: 2

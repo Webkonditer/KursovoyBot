@@ -1,6 +1,7 @@
 package com.example.kursovoybot.repository;
 
 import com.example.kursovoybot.model.NotificationTask;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -17,4 +18,7 @@ public interface NotificationTaskRepository extends CrudRepository<NotificationT
 
     @Query(value = "SELECT * FROM notification_task WHERE reminder_time = ?1 ", nativeQuery = true)
     List<NotificationTask> findTheCurrentOnesForTheMoment(LocalDateTime dateTime);
+
+    @Query(value = "DELETE FROM notification_task WHERE user_id = ?1", nativeQuery = true)
+    void deleteAllByUserId(long chatId);
 }

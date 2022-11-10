@@ -42,23 +42,24 @@ public class SetUtc {
      * @param chatId  id текущего чата
      */
     public void preparingForSetUtc(long chatId) {
-        SetUtcCallBack(chatId, 7);
+        SetUtcCallBack(chatId, 7, -1);
     }
 
-    public void getAll(long chatId) {
-        SetUtcCallBack(chatId, 25);
+    public void getAll(long chatId, long messageId) {
+        SetUtcCallBack(chatId, 25, messageId);
     }
 
-    public void SetUtcCallBack(long chatId, int numberOfButtons) {
+    public void SetUtcCallBack(long chatId, int numberOfButtons, long messageId) {
 
         int userUtc = userManagement.getUserUtc(chatId);
         Optional<TimeZone> timeZone = TimeZone.parseTimeZone(userUtc);
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText(CURRENT_TIME_ZONE_START + "\n" +
+        String text = CURRENT_TIME_ZONE_START + "\n" +
                         timeZone.get().getName() + " " + timeZone.get().getDesc() + "\n" +
-                        CURRENT_TIME_ZONE_END);
+                        CURRENT_TIME_ZONE_END;
+        message.setText(text);
 
         //Создание кнопок
         List<TimeZone> timeZones = Arrays.stream(TimeZone.values()).limit(numberOfButtons).toList();
@@ -72,16 +73,28 @@ public class SetUtc {
             rowInline.add(button);
             rowsInline.add(rowInline);
         }
-        var button = new InlineKeyboardButton();
-        button.setText(GET_ALL_TIME_ZONE);
-        button.setCallbackData("setUtcAll");
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        rowInline.add(button);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
-        message.setReplyMarkup(markupInline);
-        sendingMessages.executeMessage(message);
+        if(messageId == -1) {
+            var button = new InlineKeyboardButton();
+            button.setText(GET_ALL_TIME_ZONE);
+            button.setCallbackData("setUtcAll");
+            List<InlineKeyboardButton> rowInline = new ArrayList<>();
+            rowInline.add(button);
+            rowsInline.add(rowInline);
+            markupInline.setKeyboard(rowsInline);
+            message.setReplyMarkup(markupInline);
+            sendingMessages.executeMessage(message);
+        } else{
+            markupInline.setKeyboard(rowsInline);
+            sendingMessages.executeEditMessageText(text, chatId, messageId, markupInline);
+        }
 
     }
 
+    public void sendReply(long chatId, long messageId) {
+        int userUtc = userManagement.getUserUtc(chatId);
+        Optional<TimeZone> timeZone = TimeZone.parseTimeZone(userUtc);
+        String text = TIME_ZONE_NOW + "\n" +
+                      timeZone.get().getName() + " " + timeZone.get().getDesc() + "\n";
+        sendingMessages.executeEditMessageText(text, chatId, messageId, null);
+    }
 }

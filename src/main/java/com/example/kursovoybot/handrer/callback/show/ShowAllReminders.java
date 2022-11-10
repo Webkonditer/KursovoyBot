@@ -34,11 +34,13 @@ public class ShowAllReminders {
         var reminders = notificationTaskRepository.findAllByUserId(chatId);
         StringBuilder listOfReminders = new StringBuilder();
         for (NotificationTask reminder: reminders){
-            var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern(FORMATTER));
+            int userUtc = reminder.getUser().getUserUtc();
+            var dateTime =
+                reminder.getReminderTime().minusHours(3).plusHours(userUtc).format(DateTimeFormatter.ofPattern(FORMATTER));
             listOfReminders.append(dateTime).append(": ").append(reminder.getReminderText()).append("\n");
         }
-        sendingMessages.sendMessage(chatId, listOfReminders.toString());
-        log.info("all reminders have been issued at the user's request");
+        sendingMessages.sendMessageWithMenu(chatId, listOfReminders.toString());
+        log.info("all reminders have been issued at the user's " + chatId + " request");
 
     }
 

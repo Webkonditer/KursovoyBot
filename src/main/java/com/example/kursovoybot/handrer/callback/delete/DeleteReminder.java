@@ -49,7 +49,9 @@ public class DeleteReminder {
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         for (NotificationTask reminder : reminders) {
             var button = new InlineKeyboardButton();
-            var dateTime = reminder.getReminderTime().format(DateTimeFormatter.ofPattern(showAllReminders.getFORMATTER()));
+            int userUtc = reminder.getUser().getUserUtc();
+            var dateTime = reminder.getReminderTime().minusHours(3).plusHours(userUtc)
+                                          .format(DateTimeFormatter.ofPattern(showAllReminders.getFORMATTER()));
             button.setText(dateTime + ": " + reminder.getReminderText());
             button.setCallbackData("delete_" + reminder.getId());
             List<InlineKeyboardButton> rowInline = new ArrayList<>();
@@ -69,15 +71,18 @@ public class DeleteReminder {
     }
 
     public void delete(String callBackData, long chatId, long messageId) {
+
         notificationTaskRepository.deleteById(Long.parseLong(callBackData.substring(7)));
-        sendingMessages.executeEditMessageText(DELETE_REQUEST, chatId, messageId);
-        sendingMessages.sendMessage(chatId, DELETE_REPLAY);
+        sendingMessages.executeEditMessageText(DELETE_REQUEST, chatId, messageId, null);
+        sendingMessages.sendMessageWithMenu(chatId, DELETE_REPLAY);
         log.info("The reminder " + messageId + " was removed at the request of the user " + chatId);
+
     }
 
-    public void cancelDelete(String callBackData, long chatId, long messageId) {
-        String text = "Хорошо! Выберите другое действие из меню.";
-        sendingMessages.executeEditMessageText(DELETE_REQUEST, chatId, messageId);
-        sendingMessages.sendMessage(chatId, DELETE_CANCEL_REQUEST);
+    public void cancelDelete(long chatId, long messageId) {
+
+        sendingMessages.executeEditMessageText(DELETE_REQUEST, chatId, messageId, null);
+        sendingMessages.sendMessageWithMenu(chatId, DELETE_CANCEL_REQUEST);
+
     }
 }

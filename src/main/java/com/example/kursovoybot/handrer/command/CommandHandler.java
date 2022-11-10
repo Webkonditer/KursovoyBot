@@ -9,6 +9,7 @@ import com.example.kursovoybot.handrer.callback.setutc.SetUtc;
 import com.example.kursovoybot.handrer.callback.show.ShowAllReminders;
 import com.example.kursovoybot.handrer.callback.start.Start;
 import com.example.kursovoybot.bot.TelegramBot;
+import com.example.kursovoybot.handrer.callback.unsubscribe.UnsubscribeUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -28,8 +29,9 @@ public class CommandHandler {
     private final Help help;
     private final AboutBot aboutBot;
     private final SetUtc setUtc;
+    private final UnsubscribeUser unsubscribeUser;
 
-    public CommandHandler(TelegramBot telegramBot, DeleteReminder newReminder, DeleteReminder deleteReminder, CreateNewReminder createNewReminder, Help help, UnknownCommand unknownCommand, ShowAllReminders showAllReminders, Start start, AboutBot aboutBot, SetUtc setUtc) {
+    public CommandHandler(TelegramBot telegramBot, DeleteReminder newReminder, DeleteReminder deleteReminder, CreateNewReminder createNewReminder, Help help, UnknownCommand unknownCommand, ShowAllReminders showAllReminders, Start start, AboutBot aboutBot, SetUtc setUtc, UnsubscribeUser unsubscribeUser) {
         this.telegramBot = telegramBot;
         this.deleteReminder = deleteReminder;
         this.createNewReminder = createNewReminder;
@@ -39,6 +41,7 @@ public class CommandHandler {
         this.start = start;
         this.aboutBot = aboutBot;
         this.setUtc = setUtc;
+        this.unsubscribeUser = unsubscribeUser;
     }
 
     /**
@@ -59,6 +62,7 @@ public class CommandHandler {
                 case DELETE_COMAND -> deleteReminder.preparingForDeletion(chatId);
                 case ABOUT_COMAND -> aboutBot.aboutCallBack(chatId);
                 case SET_UTS -> setUtc.preparingForSetUtc(chatId);
+                case UNSUBSCRIBE_USER -> unsubscribeUser.preparingUnsubscribe(chatId);
             }
         } else{
             unknownCommand.unknownCommandCallBack(chatId);//Если введена неизвестная команда
