@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: AVilas
+      changes:
+        - createTable:
+            tableName: users_data_table
+            columns:
+              - column:
+                  name: chat_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: varchar(255)
+              - column:
+                  name: last_name
+                  type: varchar(255)
+              - column:
+                  name: registered_at
+                  type: timestamp
+              - column:
+                  name: user_name
+                  type: varchar(255)
+              - column:
+                  name: user_utc
+                  type: integer
+
+  - changeSet:
+      id: 2
+      author: AVilas
+      changes:
+        - createTable:
+            tableName: notification_task
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: reminder_text
+                  type: varchar(255)
+              - column:
+                  name: reminder_time
+                  type: timestamp
+              - column:
+                  name: user_id
+                  type: BIGINT
