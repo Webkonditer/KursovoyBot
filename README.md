@@ -18,3 +18,5 @@
 ### Разработчик проекта
 
 * Александр Котов (@AlexanderVilas)
+
+Бот работает по адресу https://t.me/Vilas_Reminder_Service_Bot
